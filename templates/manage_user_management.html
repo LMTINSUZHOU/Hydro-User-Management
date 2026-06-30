@@ -1,0 +1,378 @@
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<style>
+.user-management-dialog {
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  width: min(640px, 92vw);
+}
+.user-management-dialog::backdrop {
+  background: rgba(0, 0, 0, .36);
+}
+.user-management-dialog__body {
+  padding: 24px;
+}
+.user-management-dialog__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.user-management-actions {
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+</style>
+
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">{{ _('Query Users') }}</h1>
+    <div class="section__tools">
+      <a class="tool-button" href="{{ url('manage_user_management_export', query={q:query.q, searchBy:query.searchBy}) }}">{{ _('Export current query') }}</a>
+    </div>
+  </div>
+  <div class="section__body">
+    {{ noscript_note.render() }}
+    <form method="get">
+      <div class="row">
+        <div class="medium-3 columns">
+          <label>
+            {{ _('Search By') }}
+            <select name="searchBy" class="select">
+              <option value="auto"{{ ' selected' if query.searchBy == 'auto' else '' }}>{{ _('auto') }}</option>
+              <option value="uid"{{ ' selected' if query.searchBy == 'uid' else '' }}>{{ _('uid') }}</option>
+              <option value="uname"{{ ' selected' if query.searchBy == 'uname' else '' }}>{{ _('uname') }}</option>
+              <option value="mail"{{ ' selected' if query.searchBy == 'mail' else '' }}>{{ _('mail') }}</option>
+            </select>
+          </label>
+        </div>
+        <div class="medium-6 columns">
+          <label>
+            {{ _('Search keyword') }}
+            <input name="q" value="{{ query.q }}" class="textbox" placeholder="UID / username / email">
+          </label>
+        </div>
+        <div class="medium-3 columns">
+          <label>&nbsp;</label>
+          <button type="submit" class="rounded primary button">{{ _('Search') }}</button>
+          <a class="rounded button" href="{{ url('manage_user_management_export', query={q:query.q, searchBy:query.searchBy}) }}">{{ _('Export CSV') }}</a>
+        </div>
+      </div>
+    </form>
+    {% if userLimited %}
+    <p>{{ _('Showing first {0} users of {1}. Export CSV to get all matched users.').format(users.length, userTotal) }}</p>
+    {% endif %}
+  </div>
+  <div class="section__body no-padding">
+    <table class="data-table">
+      <colgroup>
+        <col class="col--uid">
+        <col class="col--user">
+        <col class="col--email">
+        <col class="col--display-name">
+        <col class="col--school">
+        <col class="col--student-id">
+        <col class="col--role">
+        <col class="col--groups">
+        <col class="col--priv">
+        <col class="col--actions">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>{{ _('User ID') }}</th>
+          <th>{{ _('Username') }}</th>
+          <th>{{ _('Email') }}</th>
+          <th>{{ _('Display Name') }}</th>
+          <th>{{ _('School') }}</th>
+          <th>{{ _('Student ID') }}</th>
+          <th>{{ _('Role') }}</th>
+          <th>{{ _('Groups') }}</th>
+          <th>{{ _('Privilege') }}</th>
+          <th>{{ _('Actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+      {%- for row in users -%}
+        <tr>
+          <td>{{ row.uid }}</td>
+          <td>
+            <a class="typo-a" href="{{ url('user_detail', uid=row.uid) }}">{{ row.uname }}</a>
+          </td>
+          <td>{{ row.mail }}</td>
+          <td>{{ row.displayName }}</td>
+          <td>{{ row.school }}</td>
+          <td>{{ row.studentId }}</td>
+          <td>{{ row.role }}</td>
+          <td>{{ row.groups }}</td>
+          <td>{{ row.priv }}</td>
+          <td>
+            {% if row.canEdit %}
+            <div class="user-management-actions">
+              <button
+                type="button"
+                class="rounded primary button"
+                data-edit-user
+                data-uid="{{ row.uid }}"
+                data-uname="{{ row.uname|default('')|escape }}"
+                data-mail="{{ row.mail|default('')|escape }}"
+                data-display-name="{{ row.displayName|default('')|escape }}"
+                data-school="{{ row.school|default('')|escape }}"
+                data-student-id="{{ row.studentId|default('')|escape }}"
+                data-role="{{ row.role|default('')|escape }}"
+                data-groups="{{ row.groups|default('')|escape }}"
+                data-priv="{{ row.priv|default('')|escape }}"
+              >{{ _('Edit') }}</button>
+              <button
+                type="button"
+                class="rounded button"
+                data-delete-user
+                data-uid="{{ row.uid }}"
+                data-uname="{{ row.uname|default('')|escape }}"
+              >{{ _('Delete') }}</button>
+            </div>
+            {% else %}
+            -
+            {% endif %}
+          </td>
+        </tr>
+      {%- else -%}
+        <tr>
+          <td colspan="10">{{ _('No results') }}</td>
+        </tr>
+      {%- endfor -%}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<dialog id="user-edit-dialog" class="user-management-dialog">
+  <form id="edit-user-form" method="post" class="user-management-dialog__body">
+    <h2 class="section__title">{{ _('Edit User') }}</h2>
+    <input type="hidden" name="operation" value="update_user">
+    <input type="hidden" name="uid">
+    <input type="hidden" name="q" value="{{ query.q }}">
+    <input type="hidden" name="searchBy" value="{{ query.searchBy }}">
+    <div class="row">
+      <div class="medium-6 columns">
+        <label>
+          {{ _('Username') }}
+          <input name="uname" class="textbox">
+        </label>
+      </div>
+      <div class="medium-6 columns">
+        <label>
+          {{ _('Email') }}
+          <input name="mail" class="textbox">
+        </label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="medium-6 columns">
+        <label>
+          {{ _('Display Name') }}
+          <input name="displayName" class="textbox">
+        </label>
+      </div>
+      <div class="medium-6 columns">
+        <label>
+          {{ _('School') }}
+          <input name="school" class="textbox">
+        </label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="medium-6 columns">
+        <label>
+          {{ _('Student ID') }}
+          <input name="studentId" class="textbox">
+        </label>
+      </div>
+      <div class="medium-6 columns">
+        <label>
+          {{ _('Role') }}
+          <input name="role" class="textbox">
+        </label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="medium-8 columns">
+        <label>
+          {{ _('Groups') }}
+          <input name="groups" class="textbox">
+        </label>
+      </div>
+      <div class="medium-4 columns">
+        <label>
+          {{ _('Privilege') }}
+          <input name="priv" class="textbox" type="number">
+        </label>
+      </div>
+    </div>
+    <div class="user-management-dialog__actions">
+      <button type="button" class="rounded button" data-close-dialog>{{ _('Cancel') }}</button>
+      <button type="submit" class="rounded primary button">{{ _('Save') }}</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="user-delete-dialog" class="user-management-dialog">
+  <form id="delete-user-form" method="post" class="user-management-dialog__body">
+    <h2 class="section__title">{{ _('Delete User') }}</h2>
+    <input type="hidden" name="operation" value="delete_user">
+    <input type="hidden" name="uid">
+    <input type="hidden" name="q" value="{{ query.q }}">
+    <input type="hidden" name="searchBy" value="{{ query.searchBy }}">
+    <p>{{ _('Confirm delete user?') }} <strong id="delete-user-name"></strong></p>
+    <p>{{ _('This will clean related data and disable the user.') }}</p>
+    <div class="user-management-dialog__actions">
+      <button type="button" class="rounded button" data-close-dialog>{{ _('Cancel') }}</button>
+      <button type="submit" class="rounded primary button">{{ _('Delete') }}</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  var editDialog = document.getElementById('user-edit-dialog');
+  var deleteDialog = document.getElementById('user-delete-dialog');
+  var editForm = document.getElementById('edit-user-form');
+  var deleteForm = document.getElementById('delete-user-form');
+  var deleteUserName = document.getElementById('delete-user-name');
+
+  function openDialog(dialog) {
+    if (!dialog) return;
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+  }
+
+  function closeDialog(dialog) {
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') dialog.close();
+    else dialog.removeAttribute('open');
+  }
+
+  function setFormValue(form, name, value) {
+    if (form && form.elements[name]) form.elements[name].value = value || '';
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-edit-user]'), function (button) {
+    button.addEventListener('click', function () {
+      var data = button.dataset;
+      setFormValue(editForm, 'uid', data.uid);
+      setFormValue(editForm, 'uname', data.uname);
+      setFormValue(editForm, 'mail', data.mail);
+      setFormValue(editForm, 'displayName', data.displayName);
+      setFormValue(editForm, 'school', data.school);
+      setFormValue(editForm, 'studentId', data.studentId);
+      setFormValue(editForm, 'role', data.role);
+      setFormValue(editForm, 'groups', data.groups);
+      setFormValue(editForm, 'priv', data.priv);
+      openDialog(editDialog);
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-delete-user]'), function (button) {
+    button.addEventListener('click', function () {
+      var data = button.dataset;
+      setFormValue(deleteForm, 'uid', data.uid);
+      if (deleteUserName) deleteUserName.textContent = data.uid + (data.uname ? ' / ' + data.uname : '');
+      openDialog(deleteDialog);
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-close-dialog]'), function (button) {
+    button.addEventListener('click', function () {
+      closeDialog(button.closest('dialog'));
+    });
+  });
+}());
+</script>
+
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">{{ _('Batch User Management') }}</h1>
+  </div>
+  <div class="section__body">
+    {% if result %}
+    <pre>{% for message in result.messages %}{{ message }}
+{% endfor %}</pre>
+    <table class="data-table">
+      <colgroup>
+        <col class="col--line">
+        <col class="col--status">
+        <col class="col--uid">
+        <col class="col--user">
+        <col class="col--message">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>{{ _('Line') }}</th>
+          <th>{{ _('Status') }}</th>
+          <th>{{ _('User ID') }}</th>
+          <th>{{ _('Username') }}</th>
+          <th>{{ _('Message') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+      {%- for row in result.rows -%}
+        <tr>
+          <td>{{ row.line }}</td>
+          <td>{{ row.status }}</td>
+          <td>{{ row.uid|default('') }}</td>
+          <td>{{ row.uname|default(row.mail|default('')) }}</td>
+          <td>{{ row.message }}</td>
+        </tr>
+      {%- endfor -%}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <form method="post">
+      <div class="row">
+        <div class="medium-6 columns">
+          <label>
+            {{ _('Action') }}
+            <select name="action" class="select">
+              <option value="add"{{ ' selected' if action == 'add' else '' }}>{{ _('Batch add users') }}</option>
+              <option value="update"{{ ' selected' if action == 'update' else '' }}>{{ _('Batch update users') }}</option>
+              <option value="delete"{{ ' selected' if action == 'delete' else '' }}>{{ _('Batch disable/delete users') }}</option>
+            </select>
+          </label>
+        </div>
+        <div class="medium-6 columns">
+          <label class="checkbox">
+            <input type="hidden" name="dryrun" value="false">
+            <input type="checkbox" name="dryrun" value="true"{{ ' checked' if dryrun else '' }}>
+            {{ _('Preview only') }}
+          </label>
+          <label class="checkbox">
+            <input type="hidden" name="cleanEffect" value="false">
+            <input type="checkbox" name="cleanEffect" value="true"{{ ' checked' if cleanEffect else '' }}>
+            {{ _('Clean related data') }}
+          </label>
+          <label class="checkbox">
+            <input type="hidden" name="hardDelete" value="false">
+            <input type="checkbox" name="hardDelete" value="true"{{ ' checked' if hardDelete else '' }}>
+            {{ _('Hard delete user document') }}
+          </label>
+        </div>
+      </div>
+
+      {{ form.form_textarea({
+        columns: null,
+        label: 'Users',
+        name: 'data',
+        value: data,
+        nospellcheck: true,
+        placeholder: 'mail,uname,password,displayName,school,studentId,uid,group\nalice@example.com,alice,abcdef,Alice,No.1 Middle School,20260001,,class-a\n\nuid,displayName,password,school\n1002,Alice Zhang,newpass123,No.2 Middle School\n\nuid\n1003'
+      }) }}
+
+      <div class="row"><div class="columns">
+        <button type="submit" class="rounded primary button">{{ _('Run') }}</button>
+      </div></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

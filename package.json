@@ -1,0 +1,27 @@
+{
+  "name": "hydro-plugin-user-management",
+  "version": "1.0.0",
+  "description": "Batch user management tools for Hydro 5.0+.",
+  "main": "index.ts",
+  "files": [
+    "index.ts",
+    "templates",
+    "README.md",
+    "tsconfig.json"
+  ],
+  "license": "MIT",
+  "author": "",
+  "keywords": [
+    "hydrooj",
+    "hydro",
+    "plugin",
+    "user-management"
+  ],
+  "dependencies": {
+    "hydrooj": ">=5.0.0",
+    "schemastery": "^3.18.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
