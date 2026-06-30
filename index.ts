@@ -479,6 +479,8 @@ async function updateQueriedUser(domainId: string, body: Record<string, any>) {
     const role = convertByType(Types.Role, roleInput, 'role');
     const groups = parseGroups(body.groups);
     const priv = parsePriv(body.priv);
+    const password = bodyValue(body, 'password');
+    const nextPassword = password ? convertByType(Types.Password, password, 'password') : undefined;
     if (priv === undefined) throw new Error('Missing priv.');
 
     if (mail !== udoc.mail) {
@@ -492,6 +494,7 @@ async function updateQueriedUser(domainId: string, body: Record<string, any>) {
 
     if (mail !== udoc.mail) await UserModel.setEmail(uid, mail);
     if (uname !== udoc.uname) await UserModel.setUname(uid, uname);
+    if (nextPassword) await UserModel.setPassword(uid, nextPassword);
     if (priv !== udoc.priv) await UserModel.setPriv(uid, priv);
     await UserModel.setById(uid, { school, studentId } as any);
     await DomainModel.setUserInDomain(domainId, uid, { displayName, role });
@@ -858,11 +861,14 @@ export async function apply(ctx: Context) {
         'Export current query': '导出当前查询',
         Groups: '用户组',
         'Hard delete user document': '物理删除用户文档',
+        'Leave blank to keep current password.': '留空表示不修改密码。',
         Line: '行号',
         Message: '消息',
         'No results': '无结果',
+        Password: '密码',
         'Preview only': '仅预览',
         Privilege: '权限',
+        'Protected user cannot be edited or deleted.': '受保护用户不能修改或删除。',
         'Query Users': '查询用户',
         Role: '角色',
         'Run': '执行',

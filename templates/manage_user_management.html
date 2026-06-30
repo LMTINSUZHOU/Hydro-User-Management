@@ -108,11 +108,11 @@
           <td>{{ row.groups }}</td>
           <td>{{ row.priv }}</td>
           <td>
-            {% if row.canEdit %}
             <div class="user-management-actions">
               <button
                 type="button"
                 class="rounded primary button"
+                {% if not row.canEdit %}disabled title="{{ _('Protected user cannot be edited or deleted.') }}"{% endif %}
                 data-edit-user
                 data-uid="{{ row.uid }}"
                 data-uname="{{ row.uname|default('')|escape }}"
@@ -127,14 +127,12 @@
               <button
                 type="button"
                 class="rounded button"
+                {% if not row.canEdit %}disabled title="{{ _('Protected user cannot be edited or deleted.') }}"{% endif %}
                 data-delete-user
                 data-uid="{{ row.uid }}"
                 data-uname="{{ row.uname|default('')|escape }}"
               >{{ _('Delete') }}</button>
             </div>
-            {% else %}
-            -
-            {% endif %}
           </td>
         </tr>
       {%- else -%}
@@ -165,6 +163,14 @@
         <label>
           {{ _('Email') }}
           <input name="mail" class="textbox">
+        </label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="columns">
+        <label>
+          {{ _('Password') }}
+          <input name="password" class="textbox" type="password" autocomplete="new-password" placeholder="{{ _('Leave blank to keep current password.') }}">
         </label>
       </div>
     </div>
@@ -263,6 +269,7 @@
       setFormValue(editForm, 'uid', data.uid);
       setFormValue(editForm, 'uname', data.uname);
       setFormValue(editForm, 'mail', data.mail);
+      setFormValue(editForm, 'password', '');
       setFormValue(editForm, 'displayName', data.displayName);
       setFormValue(editForm, 'school', data.school);
       setFormValue(editForm, 'studentId', data.studentId);
