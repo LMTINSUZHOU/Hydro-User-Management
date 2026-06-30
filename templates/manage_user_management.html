@@ -72,11 +72,7 @@
         <col class="col--user">
         <col class="col--email">
         <col class="col--display-name">
-        <col class="col--school">
-        <col class="col--student-id">
         <col class="col--role">
-        <col class="col--groups">
-        <col class="col--priv">
         <col class="col--actions">
       </colgroup>
       <thead>
@@ -85,11 +81,7 @@
           <th>{{ _('Username') }}</th>
           <th>{{ _('Email') }}</th>
           <th>{{ _('Display Name') }}</th>
-          <th>{{ _('School') }}</th>
-          <th>{{ _('Student ID') }}</th>
           <th>{{ _('Role') }}</th>
-          <th>{{ _('Groups') }}</th>
-          <th>{{ _('Privilege') }}</th>
           <th>{{ _('Actions') }}</th>
         </tr>
       </thead>
@@ -102,11 +94,7 @@
           </td>
           <td>{{ row.mail }}</td>
           <td>{{ row.displayName }}</td>
-          <td>{{ row.school }}</td>
-          <td>{{ row.studentId }}</td>
           <td>{{ row.role }}</td>
-          <td>{{ row.groups }}</td>
-          <td>{{ row.priv }}</td>
           <td>
             <div class="user-management-actions">
               <button
@@ -137,7 +125,7 @@
         </tr>
       {%- else -%}
         <tr>
-          <td colspan="10">{{ _('No results') }}</td>
+          <td colspan="6">{{ _('No results') }}</td>
         </tr>
       {%- endfor -%}
       </tbody>
